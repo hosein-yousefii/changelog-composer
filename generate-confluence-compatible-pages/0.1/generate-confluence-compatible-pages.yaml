@@ -1,0 +1,148 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: generate-confluence-compatible-pages
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/categories: Building
+    tekton.dev/tags: confluence-page
+    tekton.dev/displayName: "generate confluence compatible pages"
+spec:
+  params:
+    - name: baseImageVersion
+      type: string
+      description: |
+        Version of base changelog image.
+
+    - name: compatibleToHtml
+      type: string
+      default: "true"
+      description: |
+        Make pages compatible to Confluence Html format
+
+    - name: createChildPage
+      type: string
+      default: "true"
+      description: |
+        It will create child page.
+
+    - name: headerFooterTemplateName
+      type: string
+      default: "ReleaseNotesTemplate.md"
+      description: |
+        This include header and footer for the page.
+
+    - name: headerString
+      type: string
+      default: "[header]"
+      description: |
+        header string in template file.
+
+    - name: footerString
+      type: string
+      default: "[footer]"
+      description: |
+        footer string in template file.
+
+  steps:
+    - name: generate-confluence-compatible-pages
+      image: changelog-base-image:$(params.baseImageVersion)
+      script: |
+        #!/usr/bin/env bash
+
+        createChildPage_lower=$(echo $(params.createChildPage) | tr '[:upper:]' '[:lower:]')
+        compatibleToHtml_lower=$(echo $(params.compatibleToHtml) | tr '[:upper:]' '[:lower:]')
+
+        if [[ $compatibleToHtml_lower == "true" ]]; then
+          echo "[INFO]: Pages will be compatible to Confluence html fotmat."
+          FILE_NAME=$(find $(workspaces.input-file-dir.path)  -maxdepth 1 -name "*.html")
+          if [[ -z $FILE_NAME ]]; then
+            echo "[ERROR]: No html file exists under $(workspaces.input-file-dir.path)"
+            exit 1
+          fi
+
+          # template check
+          if [[ -e "$(workspaces.output.path)/$(params.headerFooterTemplateName)" ]];then
+            echo "[INFO]: Local header footer template found in app repository."
+            HEADER_FOOTER_TEMPLATE_FILE="$(workspaces.output.path)/$(params.headerFooterTemplateName)"
+          elif [[ $(workspaces.headerFooterTemplate-dir.bound) == "true" ]];then
+            echo "[INFO]: Using Default header footer template."
+            HEADER_FOOTER_TEMPLATE_FILE="$(workspaces.headerFooterTemplate-dir.path)/$(params.headerFooterTemplateName)"
+            if [[ ! -e $HEADER_FOOTER_TEMPLATE_FILE ]]; then
+              echo "[ERROR]: Cannot find file: $HEADER_FOOTER_TEMPLATE_FILE"
+              exit 1
+            fi
+          else
+            echo "[INFO]: header footer template NOT found."
+            touch empty
+            HEADER_FOOTER_TEMPLATE_FILE=empty
+          fi
+
+          # Check if Child page structure should be followed
+          if [[ $createChildPage_lower == "true" ]]; then
+            echo "[INFO]: Child page will be generated."
+
+            if [[ $(find $(workspaces.input-file-dir.path) -maxdepth 1 -name "*.html" | wc -l) -gt 1 ]]; then
+              echo "[ERROR]: generating multiple html Childpage is not compatible. (multiple files found in $(workspaces.input-file-dir.path))"
+              exit 1
+            fi
+
+            # Pages' name
+            ORG_FILE_NAME=$(basename -s .html $FILE_NAME)
+            MAIN_PAGE_FILE_NAME=$ORG_FILE_NAME-main.html
+            CHILD_PAGE_FILE_NAME=$ORG_FILE_NAME-child.html
+
+            # creating Main page
+            # It doesn't matter if you specify content here or not because in the code, it doesn't count it, but it is here for clarification.
+            MAIN_PAGE_CONTENT="" 
+            MAIN_PAGE=true
+            python generate-html-compatible-confluence-page.py "$HEADER_FOOTER_TEMPLATE_FILE" "$(params.headerString)" "$(params.footerString)" "$MAIN_PAGE_CONTENT" "$MAIN_PAGE" "$(workspaces.output-file-dir.path)/$MAIN_PAGE_FILE_NAME"
+
+            # creating child page
+            CHILD_PAGE_CONTENT=$(cat $FILE_NAME)
+            touch empty
+            HEADER_FOOTER_TEMPLATE_FILE=empty
+            MAIN_PAGE=false
+            python generate-html-compatible-confluence-page.py "$HEADER_FOOTER_TEMPLATE_FILE" "$(params.headerString)" "$(params.footerString)" "$CHILD_PAGE_CONTENT" "$MAIN_PAGE" "$(workspaces.output-file-dir.path)/$CHILD_PAGE_FILE_NAME"
+
+          else
+            # Generate only one page for each html file
+            touch empty
+            HEADER_FOOTER_TEMPLATE_FILE=empty
+            MAIN_PAGE=false
+
+            if [[ $(find $(workspaces.input-file-dir.path) -maxdepth 1 -name "*.html" | wc -l) -gt 1 ]]; then
+              echo "[INFO]: multiple files found in $(workspaces.input-file-dir.path)."
+            fi
+              
+            counter=0
+            for i in $FILE_NAME; do
+              PAGE_CONTENT=$(cat $i)
+              PAGE_FILE_NAME=$(basename $i)
+              python generate-html-compatible-confluence-page.py "$HEADER_FOOTER_TEMPLATE_FILE" "$(params.headerString)" "$(params.footerString)" "$PAGE_CONTENT" "$MAIN_PAGE" "$(workspaces.output-file-dir.path)/$PAGE_FILE_NAME"
+              counter=$(expr $counter + 1)
+            done
+            echo "[INFO]: $counter confluence pages' file has been generated successfully in $(workspaces.output-file-dir.path)"
+          fi
+        fi
+        exit 0
+
+  workspaces:
+    - name: output
+      description: |
+        Source repository is cloned here.
+
+    - name: input-file-dir
+      description: |
+        Where input files exists.
+
+    - name: output-file-dir
+      description: |
+        Where to store confluence pages
+
+    - name: headerFooterTemplate-dir
+      optional: true
+      description: |
+        Where to store header and footer template file.

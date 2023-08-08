@@ -1,0 +1,28 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: generate-confluence-compatible-pages
+spec:
+  taskRef:
+    name: generate-confluence-compatible-pages
+  params:
+    - name: "baseImageVersion"
+      value: "latest"
+    - name: "compatibleToHtml"
+      value: "true"
+    - name: "createChildPage"
+      value: "true"
+
+  workspaces:
+    - name: input-file-dir
+      configmap:
+        name: sample-html-file
+    - name: headerFooterTemplate-dir
+      configmap: 
+        name: sample-headerfooter-file 
+    - name: output
+      emptyDir: {}
+    - name: output-file-dir
+      emptyDir: {}
+

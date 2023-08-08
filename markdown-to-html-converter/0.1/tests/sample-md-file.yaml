@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sample-md-file
+data:
+  test-file.md: |
+    ## [v0.3.3]() - 2023-07-31
+    ### Bug Fixes
+
+    - [SAM-3363] fix bug related to converting ([50](http://git.com/changelog-base-image/commit/5275ad73cc88f) by Hossein Yousefi).
+
+    ## [v0.3.2]() - 2023-07-31
+    ### Bug Fixes
+
+    - [SAM-3363] removing tests ([f58db43](http://git.com/changelog-base-image/commit/f58db433930bfabc79b27) by Hossein Yousefi).
+
+    ## [0.3.0]() - 2023-07-31
+    ## [0.2.1]() - 2023-07-31
+    ### Features
+
+    - [SAM-3363] Improve html converter functionality ([dbb6](http://git.com/changelog-base-image/commit/cb8b58dd8c) by Hossein Yousefi).
+    - [SAM-3363] Add markdown to html converter ([d43](http://git.com/changelog-base-image/commit/2d8bdcec877dac3a33) by Hossein Yousefi).
+
+    ### Bug Fixes
+
+    - [3363] fixing Dockerfile space ([8b](http://git.com/changelog-base-image/commit/01599609c8d) by Hossein Yousefi).

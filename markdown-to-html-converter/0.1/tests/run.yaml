@@ -1,0 +1,20 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: convert-markdown-to-html
+spec:
+  taskRef:
+    name: markdown-to-html-converter
+  params:
+    - name: "compatibleToHtml"
+      value: "true"
+    - name: "baseImageVersion"
+      value: "latest"
+
+  workspaces:
+    - name: input-file-dir
+      configmap:
+        name: sample-md-file
+    - name: output-file-dir
+      emptyDir: {}

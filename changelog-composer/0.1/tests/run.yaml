@@ -1,0 +1,109 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1.0"
+    tekton.dev/pipeline: "changelog-composer"
+  name: "changelog-composer-test-pipelinerun"
+spec:
+  pipelineRef:
+    name: "changelog-composer-pipeline"
+
+  params:
+    - name: "gitRepositoryUrl"
+      value: "ssh://git@sample.com:22/changelog-base-image.git"
+    - name: "REPO_NAME"
+      value: "changelog-base-image"
+
+     # changelog generator
+    - name: "baseImageVersion"
+      value: "latest"
+
+    # markdown to html converter        
+    - name: "compatibleToHtml"
+      value: "true"
+
+    # generate confluence compatible page
+    - name: "createChildPage"
+      value: "true"
+
+    # upload confluence pages
+    - name: "apiKey"
+      value: "NDk2OqjGjsuj"
+    - name: "space"
+      value: "SAM"
+    - name: "forceUpdateChildpage"
+      value: "true"
+
+  timeout: "1h0m0s"
+  serviceAccountName: "default"
+
+  workspaces:
+  - name: source-ws
+    volumeClaimTemplate:
+      metadata:
+        creationTimestamp: null
+        generateName: source-ws-test
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Mi
+        volumeMode: Filesystem
+
+  - name: ssh-creds
+    secret:
+      secretName: git-ssh
+
+  - name: changelog-file-ws
+    volumeClaimTemplate:
+      metadata:
+        creationTimestamp: null
+        generateName: changelog-file-ws-
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Mi
+        volumeMode: Filesystem
+
+  - name: changelog-gen-jinja-template-ws
+    configmap:
+      name: changelog-gen-jinja-template-file
+
+  - name: converted-file-ws
+    volumeClaimTemplate:
+      metadata:
+        creationTimestamp: null
+        generateName: converted-file-ws-
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Mi
+        volumeMode: Filesystem        
+
+  - name: confluence-page-ws
+    volumeClaimTemplate:
+      metadata:
+        creationTimestamp: null
+        generateName: confluence-page-ws-
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Mi
+        volumeMode: Filesystem
+
+  - name: headerFooterTemplate-ws
+    configmap:
+      name: headerfooter-template-file
+
+
+
+

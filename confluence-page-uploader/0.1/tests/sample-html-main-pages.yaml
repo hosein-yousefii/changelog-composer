@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sample-html-main-files
+data:
+  sample-html-1.html:
+    <ac:structured-macro ac:name='html' ac:schema-version='1' ac:macro-id='cf730d54-5751-4cec-9461-28c790b9fc37'><ac:plain-text-body><![CDATA[<h4></h4><h2><a href=''>v0.3.3</a> - 2023-07-31</h2>
+    <h3>Bug Fixes</h3>
+    <ul>
+    <li>[SAM-3363] fix bug related to converting (<a href='http://git.com/changelog-base-image/commit/924b86feee905cc88f'>850</a> by Hossein Yousefi).</li>
+    </ul>]]></ac:plain-text-body></ac:structured-macro>
+
+  sample-html-2.html:
+    <ac:structured-macro ac:name='html' ac:schema-version='1' ac:macro-id='cf730d54-5751-4cec-9461-28c790b9fc37'><ac:plain-text-body><![CDATA[<h4></h4><h2><a href=''>v1.3.3</a> - 2023-07-31</h2>
+    <h3>Bug Fixes</h3>
+    <ul>
+    <li>[SAM-3363] removing tests (<a href='http://git.com/changelog-base-image/commit/433930bfd5dd'>43</a> by Hossein Yousefi).</li>
+    </ul>]]></ac:plain-text-body></ac:structured-macro>    
+
+  sample-html-3.html:
+    <ac:structured-macro ac:name='html' ac:schema-version='1' ac:macro-id='cf730d54-5751-4cec-9461-28c790b9fc37'><ac:plain-text-body><![CDATA[<h4></h4><h2><a href=''>v0.3.3</a> - 2023-07-31</h2>
+    <h3>Bug Fixes</h3>
+    <ul>
+    <li>[SAM-3363] fix bug related to converting (<a href='http://git.com/changelog-base-image/commit/eee905275ad73cc88f'>30</a> by Hossein Yousefi).</li>
+    </ul>
+    <h2><a href=''>v0.3.2</a> - 2023-07-31</h2>
+    <h3>Bug Fixes</h3>
+    <ul>
+    <li>[SAM-3363] removing tests (<a href='http://git.com/changelog-base-image/commit/433930bfabc79d5dd'>b43</a> by Hossein Yousefi).</li>
+    </ul>
+    <h2><a href=''>0.3.0</a> - 2023-07-31</h2>
+    <h2><a href=''>0.2.1</a> - 2023-07-31</h2>
+    <h3>Features</h3>
+    <ul>
+    <li>[SAM-3363] Improve html converter functionality (<a href='http://git.com/changelog-base-image/commit/ee48e1cb8b58dd8c'>bb6</a> by Hossein Yousefi).</li>
+    <li>[SAM-3363] Add markdown to html converter (<a href='http://git.com/changelog-base-image/commit/8bdcec877dac3a33'>793</a> by Hossein Yousefi).</li>
+    </ul>
+    <h3>Bug Fixes</h3>
+    <ul>
+    <li>[3363] fixing Dockerfile space (<a href='http://git.com/changelog-base-image/commit/891e57efbade1e8d01599609c8d'>a2f9</a> by Hossein Yousefi).</li>
+    </ul>    <h4></h4>]]></ac:plain-text-body></ac:structured-macro>
+    
+

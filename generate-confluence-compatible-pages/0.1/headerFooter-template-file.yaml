@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: headerfooter-template-file
+data:
+  ReleaseNotesTemplate.md: |
+    [Header] 
+    SAM application.
+    Auto generated Header.
+    More information here (http://git.com/changelog-composer/browse).
+
+    [Footer]
+    SAM application.
+    Auto generated Footer.

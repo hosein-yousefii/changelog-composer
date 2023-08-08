@@ -1,0 +1,113 @@
+---
+kind: "Pipeline"
+apiVersion: "tekton.dev/v1beta1"
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1.1"
+  name: "changelog-generator-pipeline"
+spec:
+  description: "Generate changelog from git logs"
+  params:
+    # git
+    - name: "repoUrl"
+      default: ""
+      description: "git repo url as used by git clone command"
+      type: "string"
+    # changelog generator
+    - name: "ImageVersion"
+      type: "string"
+      description: "base image version"
+
+  tasks:
+    - name: "git-clone"
+      params:
+        - name: "url"
+          value: "$(params.repoUrl)"
+      taskRef:
+        name: "git-clone"
+      workspaces:
+      - name: "output"
+        workspace: "source-ws"
+      - name: "ssh-directory"
+        workspace: "ssh-creds"
+
+    - name: "changelog-generator"
+      taskRef:
+        name: "changelog-generator"
+      params:
+        - name: "baseImageVersion"
+          value: "$(params.ImageVersion)"
+      runAfter:
+        - "git-clone"
+      workspaces:
+      - name: "output"
+        workspace: "source-ws"
+      - name: "changelog-file-dir"
+        workspace: "changelog-file-ws"
+      - name: "changelog-gen-jinja-template-dir"
+        workspace: "changelog-gen-jinja-template-ws"
+
+  workspaces:
+  - description: "Location where source is cloned/checked out to"
+    name: "source-ws"
+  - description: "git ssh credentials - see https://hub.tekton.dev/tekton/task/git-clone"
+    name: "ssh-creds"
+  - name: "changelog-file-ws"
+    description: "Generated changelog will store here"
+  - name: "changelog-gen-jinja-template-ws"
+    description: "Where changelog generator template is stored"
+---
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1.1"
+    tekton.dev/pipeline: changelog-generator
+  name: changelog-generator-test-pipelinerun
+spec:
+  pipelineRef:
+    name: "changelog-generator-pipeline"
+
+  params:
+    - name: gitRepositoryUrl
+      value: ssh://git@git.com:22/changelog-base-image.git
+    - name: ImageVersion
+      value: "latest"
+
+  timeout: "1h0m0s"
+  serviceAccountName: default
+
+  workspaces:
+  - name: source-ws
+    volumeClaimTemplate:
+      metadata:
+        creationTimestamp: null
+        generateName: source-ws-test
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Mi
+        volumeMode: Filesystem
+
+  - name: ssh-creds
+    secret:
+      secretName: git-ssh
+
+  - name: changelog-file-ws
+    volumeClaimTemplate:
+      metadata:
+        creationTimestamp: null
+        generateName: changelog-file-ws-
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Mi
+        volumeMode: Filesystem
+
+  - name: changelog-gen-jinja-template-ws
+    configmap:
+      name: changelog-gen-jinja-template-file

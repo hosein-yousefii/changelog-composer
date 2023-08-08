@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sample-md-file
+data:
+  test-file.md: |
+    <a name="v0.6.2"></a>
+
+    ## [v0.6.2]() (2023-08-07)
+
+    ### Bug Fixes
+
+
+
+    -  [[SAM-3363](http://jira.com/browse/SAM-3363)] issues with last messaged fixed. ([2a42](http://git.com/changelog-base-image/commit/d905e48a2857810d658bb))
+

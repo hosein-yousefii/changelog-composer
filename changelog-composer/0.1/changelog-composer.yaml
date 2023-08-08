@@ -1,0 +1,175 @@
+---
+kind: "Pipeline"
+apiVersion: "tekton.dev/v1beta1"
+metadata:
+  labels:
+    app.kubernetes.io/version: "0.1.0"
+  name: "changelog-composer-pipeline"
+spec:
+  description: "Generate changelog and publish it to confluence"
+  params:
+    # git
+    - name: "repoUrl"
+      type: "string"
+      description: "git repo url as used by git clone command"
+    - name: "REPO_NAME"
+      type: "string"
+      default: ""
+      description: |
+        "used by cd-pipeline, name of the git repo"
+    # changelog generator
+    - name: "baseImageVersion"
+      type: "string"
+      description: "base image version."
+
+    # markdown to html converter
+    - name: "compatibleToHtml"
+      type: "string"
+      description: |
+        "Make decision based on this to convert files to html format."
+
+    # generate confluence compatible page
+    - name: "createChildPage"
+      type: "string"
+      description: |
+        "Create child page and main page."
+
+    # upload confluence pages
+    - name: "apiKey"
+      type: "string"
+      description: |
+        "Confluence api key."
+    - name: "pageTitle"
+      type: "string"
+      default: "$(params.REPO_NAME)"
+      description:
+        "Title of the page."
+    - name: "space"
+      type: "string"
+      description: |
+        "Where in confluence page should be uploaded."
+    - name: "forceUpdatePage"
+      type: "string"
+      default: "true"
+      description: |
+        "Force page to be updated if there is a same page."
+    - name: "forceUpdateChildpage"
+      type: "string"
+      default: "false"
+      description: |
+        "Force child page to be updated if there is a same child page."        
+
+  tasks:
+    # Clone repository
+    - name: "git-clone"
+      params:
+        - name: "url"
+          value: "$(params.repoUrl)"
+      taskRef:
+        name: "git-clone"
+      workspaces:
+      - name: "output"
+        workspace: "source-ws"
+      - name: "ssh-directory"
+        workspace: "ssh-creds"
+
+    # Generate changelog
+    - name: "changelog-generator"
+      taskRef:
+        name: "changelog-generator"
+      params:
+        - name: "baseImageVersion"
+          value: "$(params.baseImageVersion)"
+      runAfter:
+        - "git-clone"
+      workspaces:
+      - name: "output"
+        workspace: "source-ws"
+      - name: "changelog-file-dir"
+        workspace: "changelog-file-ws"
+      - name: "changelog-gen-jinja-template-dir"
+        workspace: "changelog-gen-jinja-template-ws"
+
+    # Convert markdown files to html
+    - name: "markdown-to-html-converter"
+      taskRef:
+        name: "markdown-to-html-converter"
+      params:
+        - name: "baseImageVersion"
+          value: "$(params.baseImageVersion)"
+        - name: "compatibleToHtml"
+          value: "$(params.compatibleToHtml)"
+      runAfter:
+        - "changelog-generator"          
+      workspaces:
+        - name: "input-file-dir"
+          workspace: "changelog-file-ws"
+        - name: "output-file-dir"
+          workspace: "converted-file-ws"
+
+    # Generate confluence compatible pages
+    - name: "generate-confluence-compatible-pages"
+      taskRef:
+        name: "generate-confluence-compatible-pages"
+      params:
+        - name: "baseImageVersion"
+          value: "$(params.baseImageVersion)"
+        - name: "compatibleToHtml"
+          value: "$(params.compatibleToHtml)"        
+        - name: "createChildPage"
+          value: "$(params.createChildPage)"
+      runAfter:
+        - "markdown-to-html-converter"
+      workspaces:
+        - name: "output"
+          workspace: "source-ws"        
+        - name: "input-file-dir"
+          workspace: "converted-file-ws"
+        - name: "output-file-dir"
+          workspace: "confluence-page-ws"
+        - name: "headerFooterTemplate-dir"
+          workspace: "headerFooterTemplate-ws" 
+    
+    # Upload pages to confluence
+    - name: "confluence-page-uploader"
+      taskRef:
+        name: "confluence-page-uploader"
+      params:
+        - name: "baseImageVersion"
+          value: "$(params.baseImageVersion)"
+        - name: "compatibleToHtml"
+          value: "$(params.compatibleToHtml)"
+        - name: "createChildPage"
+          value: "$(params.createChildPage)"
+        - name: "apiKey"
+          value: "$(params.apiKey)"
+        - name: "pageTitle"
+          value: "$(params.pageTitle)"
+        - name: "space"
+          value: "$(params.space)"
+        - name: "forceUpdateChildpage"
+          value: "$(params.forceUpdateChildpage)"
+        - name: "forceUpdatePage"
+          value: "$(params.forceUpdatePage)"
+      runAfter:
+        - "generate-confluence-compatible-pages"            
+      workspaces:
+        - name: "input-file-dir"
+          workspace: "confluence-page-ws"
+
+  workspaces:
+  - name: "source-ws"
+    description: "Location where source is cloned/checked out to"
+  - name: "ssh-creds"
+    description: "git ssh credentials - see https://hub.tekton.dev/tekton/task/git-clone"
+  - name: "changelog-file-ws"
+    description: "Generated changelog will store here"
+  - name: "changelog-gen-jinja-template-ws"
+    description: "Where changelog generator template is stored"
+  - name: "converted-file-ws"
+    description: "where markdown/html files are stored.(based on convertToHtml descision)"
+  - name: "confluence-page-ws"
+    description: "Where compatible confluence pages will be stored."
+  - name: "headerFooterTemplate-ws"
+    description: "Where the default Header Footer template for the namespace is stored."
+

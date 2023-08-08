@@ -1,0 +1,56 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: markdown-to-html-converter
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/categories: Building
+    tekton.dev/tags: markdown-to-html-converter
+    tekton.dev/displayName: "convert markdown to html"
+spec:
+  params:
+    - name: baseImageVersion
+      type: string
+      description: |
+        Version of base changelog image.
+
+    - name: compatibleToHtml
+      type: string
+      description: |
+        Make decision based on this to convert files to html.
+
+  steps:
+    - name: markdown-to-html-converter
+      image: changelog-base-image:$(params.baseImageVersion)
+      script: |
+        #!/usr/bin/env bash
+        set -ex 
+
+        compatibleToHtml_lower=$(echo $(params.compatibleToHtml) | tr '[:upper:]' '[:lower:]')
+
+        if ! $compatibleToHtml_lower; then
+          echo "compatibleToHtml variable is false so, this step will be passed."
+          echo "All input files will be copied to output directory"
+          cp $(workspaces.input-file-dir.path)/*.md $(workspaces.output-file-dir.path)/
+          exit 0
+        fi
+
+        for i in $(ls $(workspaces.input-file-dir.path)/*.md);do
+          changeLog_MdFilePath=$i
+          changeLog_HtmlFilePath="$(workspaces.output-file-dir.path)/$(basename -s .md $i).html"
+          python /usr/src/app/markdown-to-html.py "$changeLog_MdFilePath" "$changeLog_HtmlFilePath"
+        done
+
+        echo "Markdown files converted to html successfuly."
+        exit 0
+
+  workspaces:
+    - name: input-file-dir
+      description: |
+        Where to find markdown file.
+
+    - name: output-file-dir
+      description: |
+        Where to store html files.

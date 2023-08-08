@@ -1,0 +1,28 @@
+---
+apiVersion: tekton.dev/v1beta1
+kind: TaskRun
+metadata:
+  name: confluence-page-uploader
+spec:
+  taskRef:
+    name: "confluence-page-uploader"
+  params:
+    - name: "baseImageVersion"
+      value: "latest"
+    - name: "htmlFormat"
+      value: "true"
+    - name: "createChildPage"
+      value: "false"
+    - name: "apiKey"
+      value: "cxODY4ND"
+    - name: "pageTitle"
+      value: "changelog-test"
+    - name: "space"
+      value: "SAM"
+    - name: "forceUpdateChildpage"
+      value: "true"
+
+  workspaces:
+    - name: "input-file-dir"
+      configmap:
+        name: "sample-html-main-files"

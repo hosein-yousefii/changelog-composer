@@ -1,0 +1,70 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: changelog-generator
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/categories: Building
+    tekton.dev/tags: changelog-generator
+    tekton.dev/displayName: "Generate changelog"
+spec:
+  params:
+    - name: baseImageVersion
+      type: string
+      description: |
+        Version of base changelog image.
+
+    - name: templateFile
+      type: string
+      default: "template.jinja"
+      description: |
+        Name of the jnja2 template.
+
+    - name: outputFile
+      type: string
+      default: "changelog.md"
+      description: |
+        Name of the generated changelog file.
+
+    - name: conventionCommitSections
+      type: string
+      default: "fix,feat"
+      description: |
+        List of convention sections which you want to filter.
+
+  steps:
+    - name: generate-changelog
+      image: changelog-base-image:$(params.baseImageVersion)
+      script: |
+        #!/usr/bin/env bash
+
+        cd $(workspaces.output.path)
+        if [[ ! -e "$(workspaces.output.path)/$(params.templateFile)" ]]; then
+          TEMPLATE_PATH="/workspace/changelog-gen-jinja-template-dir/$(params.templateFile)"
+        else
+          TEMPLATE_PATH="$(workspaces.output.path)/$(params.templateFile)"
+        fi
+
+        git-changelog -c angular -rt path:$TEMPLATE_PATH --output /workspace/changelog-file-dir/$(params.outputFile) -s $(params.conventionCommitSections)
+
+        cat /workspace/changelog-file-dir/$(params.outputFile)
+        echo "This is the output of the changelog generator which is stored in $(params.outputFile)"
+        echo "Changelog generated successfuly."
+        exit 0
+
+  workspaces:
+    - name: output
+      description: |
+        Source repository is cloned here
+
+    - name: changelog-gen-jinja-template-dir
+      description: |
+        A workspace which is a file containing the default jinja changelog generator template and based on this, changelog will be generated.
+        Remember, If you don't specify this, you should make sure the file exists in the mentioned path by parameters.template-path.
+        This means you can have your own template on your repository.
+
+    - name: changelog-file-dir
+      description: |
+        Where to store generated changelog file.

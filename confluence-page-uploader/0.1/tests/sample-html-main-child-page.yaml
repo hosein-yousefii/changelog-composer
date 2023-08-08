@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sample-html-main-child-file
+data:
+  sample-html-main.html:
+    <h4>Some documents could be linked here. </h4>
+    <h4>Even mention some URLs about projects or issues in jira. </h4>
+    <h4>You could also put confluence page documentation page URL here. </h4>
+    <h4>http://jira.com/browse/SAM-3336</h4><p><ac:structured-macro ac:name='children' ac:schema-version='2' ac:macro-id='0ec2fb0e-eca1-4f00-b4cc-94dbc89b7b7b'><ac:parameter ac:name='all'>true</ac:parameter><ac:parameter ac:name='style'>h2</ac:parameter><ac:parameter ac:name='sort'>creation</ac:parameter><ac:parameter ac:name='reverse'>true</ac:parameter><ac:parameter ac:name='excerptType'>rich content</ac:parameter></ac:structured-macro></p><h4>Sample footer related to this project. </h4>
+    <h4>Add something addition like above. </h4>
+    <h4>http://jira.com/browse/SAM-3336</h4>
+  sample-html-child.html:
+    <ac:structured-macro ac:name='html' ac:schema-version='1' ac:macro-id='cf730d54-5751-4cec-9461-28c790b9fc37'><ac:plain-text-body><![CDATA[<h4></h4><p><a name='v0.6.2'></a></p>
+
+    <h2><a href=''>v0.6.2</a> (2023-08-07)</h2>
+
+    <h3>Bug Fixes</h3>
+
+    <ul>
+    <li>[<a href="http://jira.com/browse/SAM-3363">SAM-3363</a>] issues with last messaged fixed. (<a href="http://git.com/changelog-base-image/commit/4cd5d905e48a28558bb">3a42</a>)</li>
+    </ul><h4></h4>]]></ac:plain-text-body></ac:structured-macro>    
+

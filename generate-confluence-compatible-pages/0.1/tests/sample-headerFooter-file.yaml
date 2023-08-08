@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sample-headerfooter-file
+data:
+  ReleaseNotesTemplate.md: |
+    [Header] 
+    Some documents could be linked here. 
+    Even mention some URLs about projects or issues in jira. 
+    You could also put confluence page documentation page URL here. 
+    http://jira.com/browse/SAM-3336
+
+    [Footer] 
+    Sample footer related to this project. 
+    Add something addition like above. 
+    http://jira.com/browse/SAM-3336

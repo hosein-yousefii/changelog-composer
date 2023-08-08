@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sample-html-file
+data:
+  sample-file.html: |
+    <h2><a href="">v0.3.3</a> - 2023-07-31</h2>
+    <h3>Bug Fixes</h3>
+    <ul>
+    <li>[SAM-3363] fix bug related to converting (<a href="http://git.com/changelog-base-image/commit/5ad73cc88f">850</a> by Hossein Yousefi).</li>
+    </ul>
+    <h2><a href="">v0.3.2</a> - 2023-07-31</h2>
+    <h3>Bug Fixes</h3>
+    <ul>
+    <li>[SAM-3363] removing tests (<a href="http://git.com/changelog-base-image/commit/65dfb0f2bea0d5dd">43</a> by Hossein Yousefi).</li>
+    </ul>
+    <h2><a href="">0.3.0</a> - 2023-07-31</h2>
+    <h2><a href="">0.2.1</a> - 2023-07-31</h2>
+    <h3>Features</h3>
+    <ul>
+    <li>[SAM-3363] Improve html converter functionality (<a href="http://git.com/changelog-base-image/commit/48e1cb8b58dd8c">bb6</a> by Hossein Yousefi).</li>
+    <li>[SAM-3363] Add markdown to html converter (<a href="http://git.com/changelog-base-image/commit/2d8bdcec877dac3a33">793</a> by Hossein Yousefi).</li>
+    </ul>
+    <h3>Bug Fixes</h3>
+    <ul>
+    <li>[3363] fixing Dockerfile space (<a href="http://git.com/changelog-base-image/commit/01599609c8d">2f9</a> by Hossein Yousefi).</li>
+    </ul>

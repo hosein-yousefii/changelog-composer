@@ -1,0 +1,127 @@
+---
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: confluence-page-uploader
+  labels:
+    app.kubernetes.io/version: "0.1"
+  annotations:
+    tekton.dev/categories: Building
+    tekton.dev/tags: confluence-page
+    tekton.dev/displayName: "confluence-page-uploader"
+spec:
+  params:
+    - name: "baseImageVersion"
+      type: "string"
+      description: |
+        "Version of base changelog image."
+
+    - name: "compatibleToHtml"
+      type: "string"
+      default: "true"
+      description: |
+        "pages are compatible to Confluence Html format"
+
+    - name: "createChildPage"
+      type: "string"
+      default: "true"
+      description: |
+        "It will create child page."
+
+    - name: "apiKey"
+      type: "string"
+      description: |
+        "Confluence api key."
+
+    - name: "pageTitle"
+      type: "string"
+      description: |
+        "Title of the page."
+
+    - name: "serverUrl"
+      type: "string"
+      default: "http://confluence.com"
+      description: |
+        "Confluence URL"
+
+    - name: "space"
+      type: "string"
+      description: |
+        "Where in confluence page should be uploaded."
+
+    - name: "forceUpdatePage"
+      type: "string"
+      default: "false"  
+      description: |
+        "Force page to be updated if there is a same page."
+
+    - name: "forceUpdateChildpage"
+      type: "string"
+      default: "false"  
+      description: |
+        "Force child page to be updated if there is a same child page."
+
+  steps:
+    - name: generate-confluence-compatible-pages
+      image: changelog-base-image:$(params.baseImageVersion)
+      script: |
+        #!/usr/bin/env bash
+        
+        createChildPage_lower=$(echo $(params.createChildPage) | tr '[:upper:]' '[:lower:]')
+        compatibleToHtml_lower=$(echo $(params.compatibleToHtml) | tr '[:upper:]' '[:lower:]')        
+
+        # Find html files
+        if [[ $compatibleToHtml_lower == "true" ]]; then
+          FILE_NAME=$(find $(workspaces.input-file-dir.path)  -maxdepth 1 -name "*.html")
+
+          if [[ -z $FILE_NAME ]]; then
+            echo "[ERROR]: No html file exists under $(workspaces.input-file-dir.path)"
+            exit 1
+          fi
+
+          # Check if Child page structure should be followed
+          if [[ $createChildPage_lower == "true" ]]; then
+            if [[ $(find $(workspaces.input-file-dir.path) -maxdepth 1 -name "*-child.html" | wc -l) -gt 1 ]]; then
+              echo "[ERROR]: Uploading multiple Childpage is not supported. (multiple child page files found in $(workspaces.input-file-dir.path))"
+              exit 1
+            fi
+
+            MAIN_PAGE=$(basename -s -child.html $FILE_NAME|grep main)
+            CHILD_PAGE=$(basename -s -main.html $FILE_NAME|grep child)
+            CHILD_PAGE_VERSION=$(grep -oP "(?<=<h2><a href=''>)[^<]+" "$(workspaces.input-file-dir.path)/$CHILD_PAGE")
+            sed -i "s/<h2><a href=''>.*<\/a>.*<\/h2>//" "$(workspaces.input-file-dir.path)/$CHILD_PAGE"
+            sed -i "/^$/ d" "$(workspaces.input-file-dir.path)/$CHILD_PAGE"
+
+            echo "[INFO]: uploading main page..."
+            python confluence-page-uploader.py "$(params.forceUpdatePage)" "$(params.forceUpdateChildpage)" "$(workspaces.input-file-dir.path)/$MAIN_PAGE" "$(params.apiKey)" "$(params.pageTitle)" "$(params.serverUrl)" "$(params.space)" "false" |tee RESULT
+
+            echo "[INFO]: uploading child page..."
+            python confluence-page-uploader.py "$(params.forceUpdatePage)" "$(params.forceUpdateChildpage)" "$(workspaces.input-file-dir.path)/$CHILD_PAGE" "$(params.apiKey)" "$(params.pageTitle)" "$(params.serverUrl)" "$(params.space)" "true" "$(params.pageTitle)-$CHILD_PAGE_VERSION" | tee RESULT
+            if [[ $(grep -ai error RESULT) ]]; then
+              exit 1
+            fi
+
+          else
+            counter=0
+            for i in $FILE_NAME; do
+              if [[ $(echo $FILE_NAME |tr " " "\n"|wc -l) -lt 2 ]]; then
+                PAGE_TITLE=$(params.pageTitle)
+              else
+                PAGE_TITLE=$(basename -s .html $i)
+              fi
+              echo "[INFO]: uploading multiple main page..."
+              python confluence-page-uploader.py "$(params.forceUpdatePage)" "$(params.forceUpdateChildpage)" "$i" "$(params.apiKey)" "$PAGE_TITLE" "$(params.serverUrl)" "$(params.space)" "false"| tee RESULT
+              if [[ $(grep -ai error RESULT) ]]; then
+                exit 1
+              fi
+              counter=$(expr $counter + 1)
+            done
+            echo "[INFO]: $counter confluence pages' file has been uploaded successfully"
+          fi
+        fi
+        
+  workspaces:
+    - name: "input-file-dir"
+      description: |
+        "Where confluence pages exists"
+
